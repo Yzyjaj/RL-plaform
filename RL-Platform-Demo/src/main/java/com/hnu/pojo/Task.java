@@ -7,8 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DataManage {
+public class Task {
     private Integer id;
     private String name;
-    private Integer version;
+    private String type;
+    private String description;
 }

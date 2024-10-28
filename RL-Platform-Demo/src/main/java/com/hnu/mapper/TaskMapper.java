@@ -1,13 +1,13 @@
 package com.hnu.mapper;
 
-import com.hnu.pojo.DataManage;
+import com.hnu.pojo.Task;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
 @Mapper
-public interface DataManageMapper {
-    @Select("select * from data_management")
-    List<DataManage> list();
+public interface TaskMapper {
+    @Select("select * from task")
+    List<Task> list();
 }
