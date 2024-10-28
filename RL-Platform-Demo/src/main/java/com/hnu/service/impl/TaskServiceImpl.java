@@ -20,4 +20,9 @@ public class TaskServiceImpl implements TaskService {
     public void delete(Integer id){
         taskMapper.delete(id);
     }
+
+    @Override
+    public void updatetask(Task task){
+        taskMapper.updatetask(task);
+    }
 }

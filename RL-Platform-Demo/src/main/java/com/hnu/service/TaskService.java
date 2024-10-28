@@ -9,4 +9,6 @@ public interface TaskService {
     List<Task> list();
 
     void delete(Integer id);
+
+    void updatetask(Task task);
 }

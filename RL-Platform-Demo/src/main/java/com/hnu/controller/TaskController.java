@@ -22,12 +22,18 @@ public class TaskController {
         return Result.success(taskList);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public Result delete(@PathVariable Integer id){
+    @DeleteMapping("/deletetask/{id}")
+    public Result deletetask(@PathVariable Integer id){
         log.info("根据id删除任务,{}",id);
         taskService.delete(id);
         return Result.success();
 
     }
 //    updatatasks
+    @PutMapping("/updatetask")
+    public Result updatatask(@RequestBody Task task){
+        log.info("更新任务信息{}");
+        taskService.updatetask(task);
+        return Result.success();
+    }
 }
