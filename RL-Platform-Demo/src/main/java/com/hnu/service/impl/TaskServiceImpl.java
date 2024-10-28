@@ -16,4 +16,8 @@ public class TaskServiceImpl implements TaskService {
     public List<Task> list(){
         return taskMapper.list();
     }
+    @Override
+    public void delete(Integer id){
+        taskMapper.delete(id);
+    }
 }

@@ -7,4 +7,6 @@ import java.util.List;
 public interface TaskService {
 
     List<Task> list();
+
+    void delete(Integer id);
 }
