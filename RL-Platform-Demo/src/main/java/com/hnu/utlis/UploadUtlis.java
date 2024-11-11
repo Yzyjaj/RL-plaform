@@ -114,7 +114,10 @@ public class UploadUtlis {
         try {
             // 打开Git仓库
             Git git = Git.open(new File(REPO_PATH));
+            RevCommit latestCommit = git.log().setMaxCount(1).call().iterator().next();
 
+            // 获取提交 ID
+            String latestCommitId = latestCommit.getId().getName();
             // 获取提交记录
             Iterable<RevCommit> commits = git.log().call();
             for (RevCommit commit : commits) {
@@ -130,14 +133,14 @@ public class UploadUtlis {
                 System.out.println("------------");
             }
             // 获取最新一条提交记录
-            RevCommit latestCommit = git.log().setMaxCount(1).call().iterator().next();
+//            RevCommit latestCommit = git.log().setMaxCount(1).call().iterator().next();
 
             // 获取提交 ID
-            String latestCommitId = latestCommit.getId().getName();
+//            String latestCommitId = latestCommit.getId().getName();
             return latestCommitId;
         } catch (IOException | GitAPIException e) {
             e.printStackTrace();
-            return "erro";
+            return "error";
         }
     }
 

@@ -24,13 +24,13 @@ public class UploadController {
     private AlgorithmService algorithmService;
 
     @PostMapping("/upload")
-    public Result uploadFile(MultipartFile file, String dir) {
+    public Result uploadFile(MultipartFile file,String description) {
         System.out.println("接收文件: " + file.getOriginalFilename());
         try {
             // 1. 创建名为 name 的文件夹
-            File repoDir = new File(REPO_PATH, dir);
+            File repoDir = new File(REPO_PATH);
             if (!repoDir.exists()) {
-                repoDir.mkdirs(); // 创建文件夹
+                repoDir.mkdirs();
             }
 
             // 2. 将上传的文件保存到指定目录
@@ -53,22 +53,20 @@ public class UploadController {
 
             // 4. 初始化或打开Git仓库
             Git git;
-            if (!repoDir.getParentFile().exists()) {
-                git = Git.init().setDirectory(repoDir.getParentFile()).call();
+            File gitDir = new File(repoDir, ".git");
+            if (!gitDir.exists()) {
+                git = Git.init().setDirectory(repoDir).call();
             } else {
-                try {
-                    git = Git.open(repoDir.getParentFile());
-                } catch (IOException e) {
-                    git = Git.init().setDirectory(repoDir.getParentFile()).call();
-                }
+                git = Git.open(repoDir);
             }
 
             // 5. 将文件添加到Git索引并提交
-            git.add().addFilepattern(dir).call();
-            git.commit().setMessage("Upload and extract file to folder: " + dir+':'+file.getOriginalFilename()).call();
+            //提交Algorithm_repos目录下的所有改动，如果仅提交当前文件夹，可以传入参数name
+            git.add().addFilepattern(".").call();
+            git.commit().setMessage("Upload and extract file to folder: " +file.getOriginalFilename()).call();
             String name = uploadUtlis.getFileNameWithoutExtension(file.getOriginalFilename());
             String commitID = uploadUtlis.submitInformation(REPO_PATH);
-            algorithmService.uploadAlgorithm(name,dir,commitID);
+            algorithmService.uploadAlgorithm(name,commitID,description);
             System.out.println("文件已成功上传并提交到Git仓库");
 
             // 6. 删除压缩文件

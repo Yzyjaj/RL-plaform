@@ -9,7 +9,7 @@ public interface AlgorithmService {
 
     void deleteAlgorithm(Integer id);
     void updateAlgorithm(Algorithm algorithm);
-    void uploadAlgorithm(String name,String dir,String commitId);
+    void uploadAlgorithm(String name,String commitId,String description);
     void compareAlgorithm(Integer id1,Integer id2);
     void exportAlgorithm(Integer id,String version);
 }

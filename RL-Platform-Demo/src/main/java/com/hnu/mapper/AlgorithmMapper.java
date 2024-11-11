@@ -20,8 +20,8 @@ public interface AlgorithmMapper {
     @Select("select COALESCE(MAX(version), 0) + 1 from algorithm_library where name = #{name}")
     int getNextVersion(String name);
     //插入算法
-    @Insert("insert into algorithm_library (name,dir,version,commitId) values (#{name},#{dir},#{version},#{commitId})")
-    void uploadAlgorithm(String name,String dir,Integer version,String commitId);
+    @Insert("insert into algorithm_library (name,version,commitId,description) values (#{name},#{version},#{commitId},#{description})")
+    void uploadAlgorithm(String name,Integer version,String commitId,String description);
 
     @Select("select commitId from algorithm_library where id=#{id}")
     String getcommitIdbyId(Integer id);

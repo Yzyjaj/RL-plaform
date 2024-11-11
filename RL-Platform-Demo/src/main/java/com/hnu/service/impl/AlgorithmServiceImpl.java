@@ -31,9 +31,9 @@ public class AlgorithmServiceImpl implements AlgorithmService {
         algorithmMapper.updateAlgorithm(algorithm);
     }
     @Override
-    public void uploadAlgorithm(String name,String dir,String commitId){
+    public void uploadAlgorithm(String name,String commitId,String description){
         Integer version = algorithmMapper.getNextVersion(name);
-        algorithmMapper.uploadAlgorithm(name,dir,version,commitId);
+        algorithmMapper.uploadAlgorithm(name,version,commitId,description);
     }
     @Override
     public void compareAlgorithm(Integer id1,Integer id2){
@@ -52,14 +52,14 @@ public class AlgorithmServiceImpl implements AlgorithmService {
     public void exportAlgorithm(Integer id,String version){
         String name = algorithmMapper.getNameById(id);
         Algorithm algorithm = algorithmMapper.getAlgorithmByNameVersion(name,version);
-        System.out.println(algorithm.getId());
-        System.out.println(algorithm.getName());
-        System.out.println(algorithm.getVersion());
-        System.out.println(algorithm.getDescription());
-        System.out.println(algorithm.getDir());
-        System.out.println(algorithm.getCommand());
-        System.out.println(algorithm.getCommitId());
-        System.out.println(algorithm.getDir()+'/'+algorithm.getName());
+//        System.out.println(algorithm.getId());
+//        System.out.println(algorithm.getName());
+//        System.out.println(algorithm.getVersion());
+//        System.out.println(algorithm.getDescription());
+//        System.out.println(algorithm.getDir());
+//        System.out.println(algorithm.getCommand());
+//        System.out.println(algorithm.getCommitId());
+//        System.out.println(algorithm.getDir()+'/'+algorithm.getName());
         uploadUtlis.exportVersion(algorithm.getCommitId(),algorithm.getDir()+'/'+algorithm.getName(),"F:\\Java\\RLplatform\\Algorithm_repos");
     }
 }
