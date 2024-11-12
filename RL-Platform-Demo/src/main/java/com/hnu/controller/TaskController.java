@@ -11,7 +11,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@CrossOrigin(origins = "http://localhost:5173") // 允许指定的来源
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class TaskController {
     @Autowired
     private TaskService taskService;

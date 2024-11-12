@@ -14,11 +14,21 @@ public class PytorchTrainingServiceImpl {
     @Async("taskExecutor")
     public void startTrainingAsync(String scriptPath) {
         // 设置固定路径
-        String scriptPathFixed = "F:/Java/RLplatform/code/DNQN_SimHash/main.py";
+        String scriptPathFixed = "C:\\Users\\chang\\Desktop\\DNQN_SimHash\\main.py";
+        // conda activate 命令路径（根据你的 Anaconda 安装目录调整）
+        String condaPath = "D:\\anaconda3\\Scripts\\activate";
+        // conda 环境名称
+        String environmentName = "RLonHand";
+
         System.out.println("Starting training...");
 
-        // 执行 Python 脚本并获取输出
-        ProcessBuilder processBuilder = new ProcessBuilder("python", scriptPathFixed);
+        // 组装命令：通过 cmd 执行多个命令来激活 conda 环境并执行 Python 脚本
+        String command = String.format("cmd /c \"cd /d C:\\Users\\chang\\Desktop\\DNQN_SimHash && call %s %s && python %s\"",
+                condaPath, environmentName, scriptPathFixed);
+
+
+        // 使用 ProcessBuilder 执行命令
+        ProcessBuilder processBuilder = new ProcessBuilder("cmd", "/c", command);
 
         try {
             // 启动进程
@@ -28,30 +38,39 @@ public class PytorchTrainingServiceImpl {
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 
-            String line;
-
-            // 逐行读取标准输出
-            while ((line = reader.readLine()) != null) {
-                // 打印标准输出内容
-                System.out.println("STDOUT: " + line);
-
-                // 如果输出中包含 "success" 或者其他成功标志
-                if (line.contains("success")) {
-                    System.out.println("Training completed successfully!");
-                    break; // 如果已经完成，跳出循环
+            // 使用独立线程读取输出，防止主线程阻塞
+            Thread stdoutReader = new Thread(() -> {
+                try {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println("STDOUT: " + line);
+                        if (line.contains("success")) {
+                            System.out.println("Training completed successfully!");
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            }
+            });
 
-            // 逐行读取标准错误流（警告和错误信息）
-            while ((line = errorReader.readLine()) != null) {
-                // 打印标准错误内容
-                System.err.println("STDERR: " + line);
-
-                // 如果遇到 DeprecationWarning 或其他警告，捕获并处理
-                if (line.contains("DeprecationWarning")) {
-                    System.err.println("Warning detected: " + line);
+            // 使用独立线程读取错误输出，防止主线程阻塞
+            Thread stderrReader = new Thread(() -> {
+                try {
+                    String line;
+                    while ((line = errorReader.readLine()) != null) {
+                        System.err.println("STDERR: " + line);
+                        if (line.contains("DeprecationWarning")) {
+                            System.err.println("Warning detected: " + line);
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            }
+            });
+
+            // 启动读取输出的线程
+            stdoutReader.start();
+            stderrReader.start();
 
             // 等待进程执行完毕
             int exitCode = process.waitFor();
@@ -60,6 +79,10 @@ public class PytorchTrainingServiceImpl {
             } else {
                 System.err.println("Python script finished with error code: " + exitCode);
             }
+
+            // 等待线程结束
+            stdoutReader.join();
+            stderrReader.join();
 
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();

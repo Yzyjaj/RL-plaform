@@ -6,6 +6,7 @@ import com.hnu.utlis.UploadUtlis;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.Git;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,8 +16,9 @@ import java.io.IOException;
 import java.io.File;
 @Slf4j
 @RestController
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class UploadController {
-    private static final String REPO_PATH = "F:\\Java\\RLplatform\\Algorithm_repos"; // Git仓库的路径
+    private static final String REPO_PATH = "D:\\Algorithm"; // Git仓库的路径
     @Autowired
     UploadUtlis uploadUtlis;
 
