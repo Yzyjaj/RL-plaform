@@ -10,5 +10,5 @@ public interface TaskService {
 
     void delete(Integer id);
 
-    void updatetask(Task task);
+    void updatetask( Task task);
 }
