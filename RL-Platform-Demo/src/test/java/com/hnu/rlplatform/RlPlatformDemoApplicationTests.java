@@ -33,7 +33,7 @@ class RlPlatformDemoApplicationTests {
     }
     @Test
     void ran(){
-
+        uploadUtlis.exportVersion("826852e1ac9aa3df59e65c72abe8e03d60dbf699","testdir","F:\\Java\\RLplatform\\Algorithm_repos\\testdir");
     }
 
 }

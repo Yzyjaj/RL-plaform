@@ -60,15 +60,6 @@ public class UploadController {
                 git = Git.open(repoDir);
             }
 
-            // 5. 将文件添加到Git索引并提交
-            //提交Algorithm_repos目录下的所有改动，如果仅提交当前文件夹，可以传入参数name
-            git.add().addFilepattern(".").call();
-            git.commit().setMessage("Upload and extract file to folder: " +file.getOriginalFilename()).call();
-            String name = uploadUtlis.getFileNameWithoutExtension(file.getOriginalFilename());
-            String commitID = uploadUtlis.submitInformation(REPO_PATH);
-            algorithmService.uploadAlgorithm(name,commitID,description);
-            System.out.println("文件已成功上传并提交到Git仓库");
-
             // 6. 删除压缩文件
             if (uploadedFile.exists()) {
                 boolean deleted = uploadedFile.delete();
@@ -78,6 +69,16 @@ public class UploadController {
                     System.out.println("删除压缩包文件失败: " + uploadedFile.getAbsolutePath());
                 }
             }
+            // 5. 将文件添加到Git索引并提交
+            //提交Algorithm_repos目录下的所有改动，如果仅提交当前文件夹，可以传入参数name
+            String name = uploadUtlis.getFileNameWithoutExtension(file.getOriginalFilename());
+            git.add().addFilepattern(name).call();
+            git.commit().setMessage("Upload and extract file to folder: " +file.getOriginalFilename()).call();
+            String commitID = uploadUtlis.submitInformation(REPO_PATH);
+            algorithmService.uploadAlgorithm(name,commitID,description);
+            System.out.println("文件已成功上传并提交到Git仓库");
+
+
 
             return Result.success(repoDir.getAbsolutePath());
 

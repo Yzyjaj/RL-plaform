@@ -3,6 +3,9 @@ package com.hnu.utlis;
 
 import com.github.junrar.Archive;
 import com.github.junrar.rarfile.FileHeader;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
@@ -22,6 +25,10 @@ import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -30,10 +37,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.zip.ZipOutputStream;
 
 @Component
 public class UploadUtlis {
-//    private static final String REPO_PATH = "F:\\Java\\RLplatform\\Algorithm_repos"; // Git仓库的路径
+    private static String REPO_PATH = "F:\\Java\\RLplatform\\Algorithm_repos"; // Git仓库的路径
 
     // 解压zip文件
     public void unzipFile(File file, File destDir) throws IOException {
@@ -96,6 +104,77 @@ public class UploadUtlis {
             }
         }
     }
+
+    //压缩为zip文件
+    public void compressDirectory(String name){
+        String sourceDirPath = REPO_PATH+'/'+name;
+        String zipFilePath = REPO_PATH+'/'+name+".zip";
+        System.out.println(sourceDirPath);
+        System.out.println(zipFilePath);
+        File sourceDir = new File(sourceDirPath);
+
+        if (!sourceDir.exists() || !sourceDir.isDirectory()) {
+            throw new IllegalArgumentException("The source directory does not exist or is not a directory.");
+        }
+
+        // 创建 Zip 输出流
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(zipFilePath);
+                ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream)
+        ) {
+
+            // 递归地添加文件
+            Path sourcePath = Paths.get(sourceDirPath);
+            Files.walk(sourcePath)
+                    .filter(path -> !Files.isDirectory(path))  // 只处理文件，跳过目录
+                    .forEach(path -> {
+                        try {
+                            // 创建每个文件的 ZIP 条目
+                            String relativePath = sourcePath.relativize(path).toString();
+                            zipOutputStream.putNextEntry(new ZipEntry(relativePath));
+
+                            // 将文件内容写入 ZIP 文件
+                            Files.copy(path, zipOutputStream);
+
+                            // 关闭当前条目
+                            zipOutputStream.closeEntry();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+        } catch (IOException e) {  // 捕获并处理异常
+            System.out.println("Error occurred during compression: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    //导出该压缩包
+    public ResponseEntity<byte[]> downloadFile(String name){
+        String FILE_PATH = REPO_PATH+'/'+name+".zip";
+        File file = new File(FILE_PATH);
+
+        // 确保文件存在
+        if (!file.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(null);  // 文件不存在时，返回404
+        }
+
+        try {
+            // 读取文件为字节数组
+            byte[] fileBytes = Files.readAllBytes(file.toPath());
+
+            // 返回文件内容，设置Content-Disposition为附件下载
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getName())
+                    .contentLength(file.length())
+                    .body(fileBytes);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);  // 读取文件错误时，返回500
+        }
+    }
+
     //得到没有后缀的文件名
     public String getFileNameWithoutExtension(String zipname) {
         if (zipname != null && zipname.contains(".")) {
@@ -221,6 +300,9 @@ public class UploadUtlis {
                     // 检查当前路径是否是文件夹
                     String currentPath = treeWalk.getPathString();
                     File outputFile = new File(outputPath, currentPath);
+                    if (outputFile.exists()) {
+                        outputFile.delete();  // 删除已存在的文件
+                    }
 
                     // 如果是文件夹，创建对应的输出文件夹
                     if (treeWalk.isSubtree()) {

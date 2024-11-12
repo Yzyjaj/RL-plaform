@@ -4,11 +4,16 @@ package com.hnu.controller;
 import com.hnu.pojo.Algorithm;
 import com.hnu.pojo.Result;
 import com.hnu.service.AlgorithmService;
+import jakarta.annotation.Resource;
+//import org.springframework.core.io.Resource;  // 确保使用Spring的Resource接口
+import org.springframework.core.io.InputStreamResource;  // 输入流资源
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.annotations.Delete;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -45,10 +50,10 @@ public class AlgorithmController {
         return Result.success();
     }
     //导出旧版本代码
-    @GetMapping("/exportAlgorithm/{id}/{version}")
-    public Result exportAlgorithm(@PathVariable Integer id,@PathVariable String version){
-        log.info("导出历史版本{},{}",id,version);
-        algorithmService.exportAlgorithm(id,version);
-        return Result.success();
+    @GetMapping("/exportAlgorithm/{id}")
+    public ResponseEntity<byte[]> exportAlgorithm(@PathVariable Integer id){
+        log.info("将算法文件压缩包上传给前端,{}",id);
+        return algorithmService.exportAlgorithm(id);
     }
+
 }

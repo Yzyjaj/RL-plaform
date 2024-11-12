@@ -5,14 +5,27 @@ import com.hnu.pojo.Algorithm;
 import com.hnu.pojo.Result;
 import com.hnu.service.AlgorithmService;
 import com.hnu.utlis.UploadUtlis;
+import jakarta.annotation.Resource;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Service
 public class AlgorithmServiceImpl implements AlgorithmService {
+    public static String REPO_PATH = "F:/Java/RLplatform/Algorithm_repos";
     @Autowired
     private AlgorithmMapper algorithmMapper;
     @Autowired
@@ -49,17 +62,17 @@ public class AlgorithmServiceImpl implements AlgorithmService {
         }
     }
     @Override
-    public void exportAlgorithm(Integer id,String version){
-        String name = algorithmMapper.getNameById(id);
-        Algorithm algorithm = algorithmMapper.getAlgorithmByNameVersion(name,version);
-//        System.out.println(algorithm.getId());
-//        System.out.println(algorithm.getName());
-//        System.out.println(algorithm.getVersion());
-//        System.out.println(algorithm.getDescription());
-//        System.out.println(algorithm.getDir());
-//        System.out.println(algorithm.getCommand());
-//        System.out.println(algorithm.getCommitId());
-//        System.out.println(algorithm.getDir()+'/'+algorithm.getName());
-        uploadUtlis.exportVersion(algorithm.getCommitId(),algorithm.getDir()+'/'+algorithm.getName(),"F:\\Java\\RLplatform\\Algorithm_repos");
+    public ResponseEntity<byte[]> exportAlgorithm(Integer id){
+        Algorithm algorithm = algorithmMapper.getAllById(id);
+        System.out.println(algorithm.getName());
+        //导出旧版本
+        uploadUtlis.exportVersion(algorithm.getCommitId(),algorithm.getName(),"F:/Java/RLplatform/Algorithm_repos");
+        //压缩该文件
+        uploadUtlis.compressDirectory(algorithm.getName());
+        //导出该文件
+        return uploadUtlis.downloadFile(algorithm.getName());
     }
+
+
+
 }

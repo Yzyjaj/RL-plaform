@@ -22,7 +22,8 @@ public interface AlgorithmMapper {
     //插入算法
     @Insert("insert into algorithm_library (name,version,commitId,description) values (#{name},#{version},#{commitId},#{description})")
     void uploadAlgorithm(String name,Integer version,String commitId,String description);
-
+    @Select("select * from algorithm_library where id=#{id}")
+    Algorithm getAllById(Integer id);
     @Select("select commitId from algorithm_library where id=#{id}")
     String getcommitIdbyId(Integer id);
     @Select("select name from algorithm_library where id=#{id}")
