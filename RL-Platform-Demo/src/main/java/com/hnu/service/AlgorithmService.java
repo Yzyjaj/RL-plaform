@@ -1,7 +1,6 @@
 package com.hnu.service;
 
 import com.hnu.pojo.Algorithm;
-import jakarta.annotation.Resource;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;

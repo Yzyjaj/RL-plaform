@@ -28,12 +28,6 @@ public interface AlgorithmMapper {
     String getcommitIdbyId(Integer id);
     @Select("select name from algorithm_library where id=#{id}")
     String getNameById(Integer id);
-//    @Select("select commitId from algorithm_library where id=#{id} and version=#{version}")
-//    String getcommitIdByVersion(Integer id,String version);
-//    @Select("select name from algorithm_library where id=#{id} and version=#{version}")
-//    String getNameByIdVersion(Integer id,String version);
-//    @Select("select * from algorithm_library where id=#{id} and version=#{version}")
-//    String getDirByIdVersion(Integer id,String version);
     @Select("select * from algorithm_library where name=#{name} and version=#{version}")
     Algorithm getAlgorithmByNameVersion(String name,String version);
 }
