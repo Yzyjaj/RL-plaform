@@ -2,6 +2,7 @@ package com.hnu.pojo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Data
@@ -14,7 +15,7 @@ public class Algorithm {
     String description;
     String dir;
     String command;
+    @Getter
     String commitId;
-
 
 }

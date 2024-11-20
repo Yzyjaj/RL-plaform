@@ -3,8 +3,11 @@ package com.hnu.service.impl;
 import com.github.junrar.Archive;
 import com.github.junrar.rarfile.FileHeader;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.List;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipEntry;
 
@@ -12,10 +15,13 @@ import com.hnu.service.FileService;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
+import org.eclipse.jgit.diff.DiffEntry;
+import org.eclipse.jgit.diff.DiffFormatter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -119,23 +125,37 @@ public class FileServiceImpl implements FileService {
         }
     }
 
+    /**
+     * 返回文件给前端，并在传输后删除临时文件
+     * @param file 临时文件
+     * @return ResponseEntity 包含文件的响应体
+     */
     @Override
-    public ResponseEntity<byte[]> downloadFile(String name) {
-        String FILE_PATH = REPO_PATH + '/' + name + ".zip";
-        File file = new File(FILE_PATH);
+    public ResponseEntity<byte[]> downloadFile(String fileName) {
+        // 创建临时文件路径
+        File file = new File(REPO_PATH + "/" + fileName); // 确保路径正确
 
         if (!file.exists()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
 
         try {
+            // 读取文件内容为字节数组
             byte[] fileBytes = Files.readAllBytes(file.toPath());
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getName())
-                    .contentLength(file.length())
-                    .body(fileBytes);
+
+            // 创建 ResponseEntity 返回文件内容
+            ResponseEntity<byte[]> response = ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)  // 设置文件类型
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getName())  // 设置文件下载头
+                    .contentLength(file.length())  // 设置文件大小
+                    .body(fileBytes);  // 设置文件内容
+
+            // 删除临时文件
+            Files.delete(file.toPath()); // 删除文件
+
+            return response;
         } catch (IOException e) {
+            // 处理文件读取或删除错误
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -149,4 +169,6 @@ public class FileServiceImpl implements FileService {
             return zipname;
         }
     }
+
+
 }

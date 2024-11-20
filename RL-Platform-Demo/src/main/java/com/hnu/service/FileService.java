@@ -1,10 +1,13 @@
 package com.hnu.service;
 
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.eclipse.jgit.diff.DiffEntry;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Repository;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public interface FileService {
     void unzipFile(File file, File destDir) throws IOException;
