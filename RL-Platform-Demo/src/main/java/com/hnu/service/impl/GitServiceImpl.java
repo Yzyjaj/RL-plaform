@@ -48,10 +48,9 @@
 
         @Override
         public String versionComparison(String oldCommitId, String newCommitId) throws Exception {
-            StringBuilder diffContent = new StringBuilder();  // 用于拼接差异内容
+            StringBuilder diffContent = new StringBuilder();
 
             try {
-                // 使用 JGit 比较版本并将差异内容存入 diffContent
                 try (Repository repository = Git.open(new File(REPO_PATH)).getRepository();
                      Git git = new Git(repository);
                      ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -60,27 +59,35 @@
                     AbstractTreeIterator oldTreeParser = prepareTreeParser(repository, oldCommitId);
                     AbstractTreeIterator newTreeParser = prepareTreeParser(repository, newCommitId);
 
+                    // 设置仓库和启用重命名检测
+                    diffFormatter.setRepository(repository);
+                    diffFormatter.setDetectRenames(true);
+
+
                     List<DiffEntry> diffEntries = git.diff()
                             .setOldTree(oldTreeParser)
                             .setNewTree(newTreeParser)
                             .call();
 
-                    diffFormatter.setRepository(repository);
-
                     for (DiffEntry entry : diffEntries) {
+                        System.out.println("Change Type: " + entry.getChangeType());
+                        System.out.println("Old Path: " + entry.getOldPath());
+                        System.out.println("New Path: " + entry.getNewPath());
+
                         diffFormatter.format(entry);
-                        String diff = out.toString(StandardCharsets.UTF_8);  // 获取格式化后的差异内容
-                        diffContent.append(diff).append(System.lineSeparator());  // 拼接差异内容
-                        out.reset();  // 重置输出流
+                        String diff = out.toString(StandardCharsets.UTF_8);
+                        diffContent.append(diff).append(System.lineSeparator());
+                        out.reset();
                     }
                 }
 
-                return diffContent.toString();  // 返回拼接的差异内容
+                return diffContent.toString();
             } catch (IOException | GitAPIException e) {
                 e.printStackTrace();
                 throw new Exception("差异内容生成失败", e);
             }
         }
+
 
 
 

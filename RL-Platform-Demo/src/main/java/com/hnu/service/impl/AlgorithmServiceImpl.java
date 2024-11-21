@@ -74,7 +74,7 @@ public class AlgorithmServiceImpl implements AlgorithmService {
         //压缩该文件
         fileService.compressDirectory(algorithm.getName());
         //导出该文件
-        return fileService.downloadFile(algorithm.getName());
+        return fileService.downloadFile(algorithm.getName() + ".zip");
     }
 
 
