@@ -14,6 +14,7 @@ public interface FileService {
     void unrarFile(File file, File destDir) throws IOException;
     void un7zFile(File file, File destDir) throws IOException, ArchiveException;
     void compressDirectory(String name);
+    void deleteDirectory(File dir);
     ResponseEntity<byte[]> downloadFile(String name);
     String getFileNameWithoutExtension(String zipname);
 }

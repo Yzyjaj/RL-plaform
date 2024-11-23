@@ -2,28 +2,19 @@ package com.hnu.service.impl;
 
 import com.github.junrar.Archive;
 import com.github.junrar.rarfile.FileHeader;
-
-import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.List;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipEntry;
-
 import com.hnu.service.FileService;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
-import org.eclipse.jgit.diff.DiffEntry;
-import org.eclipse.jgit.diff.DiffFormatter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -97,7 +88,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public void compressDirectory(String name) {
-        String sourceDirPath = REPO_PATH + '/' + name;
+        String sourceDirPath = REPO_PATH + '/' + name + '/' + name;
         String zipFilePath = REPO_PATH + '/' + name + ".zip";
         File sourceDir = new File(sourceDirPath);
 
@@ -168,6 +159,25 @@ public class FileServiceImpl implements FileService {
         } else {
             return zipname;
         }
+    }
+
+    /**
+     * 删除文件夹及其内容
+     *
+     * @param dir 文件夹
+     */
+    public void deleteDirectory(File dir) {
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteDirectory(file); // 递归删除子文件夹
+                } else {
+                    file.delete(); // 删除文件
+                }
+            }
+        }
+        dir.delete(); // 删除空目录
     }
 
 

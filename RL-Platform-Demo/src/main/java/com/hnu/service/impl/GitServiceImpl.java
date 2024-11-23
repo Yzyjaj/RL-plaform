@@ -7,6 +7,7 @@
     import org.eclipse.jgit.diff.DiffEntry;
     import org.eclipse.jgit.diff.DiffFormatter;
     import org.eclipse.jgit.lib.ObjectId;
+    import org.eclipse.jgit.lib.ObjectReader;
     import org.eclipse.jgit.lib.Repository;
     import org.eclipse.jgit.revwalk.RevCommit;
     import org.eclipse.jgit.revwalk.RevTree;
@@ -14,8 +15,7 @@
     import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
     import org.eclipse.jgit.treewalk.AbstractTreeIterator;
     import org.eclipse.jgit.treewalk.CanonicalTreeParser;
-    import org.eclipse.jgit.treewalk.TreeWalk;
-    import org.eclipse.jgit.treewalk.filter.PathFilter;
+
     import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.stereotype.Service;
 
@@ -27,7 +27,7 @@
     @Service
     public class GitServiceImpl implements GitService {
 
-        private static final String REPO_PATH = "D://Algorithm";
+        private static final String REPO_PATH = "D:\\Algorithm";
         @Autowired
         private FileService fileService;
 
@@ -47,98 +47,80 @@
         }
 
         @Override
-        public String versionComparison(String oldCommitId, String newCommitId) throws Exception {
+        public String versionComparison(String oldCommitId, String newCommitId, String fileName) throws Exception {
             StringBuilder diffContent = new StringBuilder();
+            String comparePath = REPO_PATH + "\\" + fileName;
 
-            try {
-                try (Repository repository = Git.open(new File(REPO_PATH)).getRepository();
-                     Git git = new Git(repository);
-                     ByteArrayOutputStream out = new ByteArrayOutputStream();
-                     DiffFormatter diffFormatter = new DiffFormatter(out)) {
+            try (Repository repository = Git.open(new File(comparePath)).getRepository();
+                 Git git = new Git(repository)) {
 
-                    AbstractTreeIterator oldTreeParser = prepareTreeParser(repository, oldCommitId);
-                    AbstractTreeIterator newTreeParser = prepareTreeParser(repository, newCommitId);
+                // 获取旧提交和新提交的 Tree
+                AbstractTreeIterator oldTreeParser = prepareTreeParser(repository, oldCommitId);
+                AbstractTreeIterator newTreeParser = prepareTreeParser(repository, newCommitId);
 
-                    // 设置仓库和启用重命名检测
-                    diffFormatter.setRepository(repository);
-                    diffFormatter.setDetectRenames(true);
+                // 执行 diff 比较
+                List<DiffEntry> diffEntries = git.diff()
+                        .setOldTree(oldTreeParser)
+                        .setNewTree(newTreeParser)
+                        .call();
 
-
-                    List<DiffEntry> diffEntries = git.diff()
-                            .setOldTree(oldTreeParser)
-                            .setNewTree(newTreeParser)
-                            .call();
-
-                    for (DiffEntry entry : diffEntries) {
-                        System.out.println("Change Type: " + entry.getChangeType());
-                        System.out.println("Old Path: " + entry.getOldPath());
-                        System.out.println("New Path: " + entry.getNewPath());
-
-                        diffFormatter.format(entry);
+                // 输出每个差异内容
+                for (DiffEntry entry : diffEntries) {
+                    // 将差异格式化并附加到 diffContent
+                    try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+                         DiffFormatter formatter = new DiffFormatter(out)) {
+                        formatter.setRepository(repository);
+                        formatter.format(entry);
                         String diff = out.toString(StandardCharsets.UTF_8);
                         diffContent.append(diff).append(System.lineSeparator());
-                        out.reset();
                     }
                 }
 
-                return diffContent.toString();
             } catch (IOException | GitAPIException e) {
                 e.printStackTrace();
                 throw new Exception("差异内容生成失败", e);
             }
+
+            return diffContent.toString();
         }
-
-
-
-
-
 
 
 
         @Override
         public void exportVersion(String commitId, String filePath, String outputPath) {
-            try (Repository repository = Git.open(new File(REPO_PATH)).getRepository();
-                 RevWalk revWalk = new RevWalk(repository)) {
+            try {
+                String exportDir = REPO_PATH + "\\" + filePath;
+                File repoDir = new File(exportDir);
+                FileRepositoryBuilder builder = new FileRepositoryBuilder();
+                Repository repository = builder.setGitDir(new File(repoDir, ".git"))
+                        .readEnvironment()
+                        .findGitDir()
+                        .build();
 
-                RevCommit commit = revWalk.parseCommit(repository.resolve(commitId));
-                try (TreeWalk treeWalk = new TreeWalk(repository)) {
-                    treeWalk.addTree(commit.getTree());
-                    treeWalk.setRecursive(true);
-                    treeWalk.setFilter(PathFilter.create(filePath));
+                try (Git git = new Git(repository)) {
+                    // 执行 git checkout 到指定 commitId
+                    git.checkout().setName(commitId).call();
+                    System.out.println("Checked out to commit: " + commitId);
 
-                    while (treeWalk.next()) {
-                        String currentPath = treeWalk.getPathString();
-                        File outputFile = new File(outputPath, currentPath);
-                        if (outputFile.exists()) {
-                            outputFile.delete();
-                        }
-
-                        if (treeWalk.isSubtree()) {
-                            outputFile.mkdirs();
-                            treeWalk.enterSubtree();
-                        } else {
-                            byte[] fileContent = repository.open(treeWalk.getObjectId(0)).getBytes();
-                            outputFile.getParentFile().mkdirs();
-                            Files.write(outputFile.toPath(), fileContent);
-                        }
-                    }
                 }
-            } catch (IOException e) {
+            } catch (IOException | GitAPIException e) {
                 e.printStackTrace();
             }
         }
 
-        private AbstractTreeIterator prepareTreeParser(Repository repository, String objectId) throws IOException {
-            try (RevWalk walk = new RevWalk(repository)) {
-                RevCommit commit = walk.parseCommit(ObjectId.fromString(objectId));
-                RevTree treeCommit = commit.getTree();
-                CanonicalTreeParser treeParser = new CanonicalTreeParser();
-                try (var reader = repository.newObjectReader()) {
-                    treeParser.reset(reader, treeCommit);
-                }
-                walk.dispose();
-                return treeParser;
-            }
+
+
+
+        // Helper method to prepare the tree parser
+        private AbstractTreeIterator prepareTreeParser(Repository repository, String commitId) throws IOException {
+            ObjectId commitObjectId = repository.resolve(commitId);
+            RevWalk walk = new RevWalk(repository);
+            RevCommit commit = walk.parseCommit(commitObjectId);
+            RevTree tree = commit.getTree();
+            ObjectReader reader = repository.newObjectReader();
+            CanonicalTreeParser treeParser = new CanonicalTreeParser();
+            treeParser.reset(reader, tree);
+            return treeParser;
         }
 
 

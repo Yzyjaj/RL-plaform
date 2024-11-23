@@ -46,15 +46,16 @@ public class AlgorithmServiceImpl implements AlgorithmService {
 
     @Override
     public String compareAlgorithm(Integer id1, Integer id2) {
+        Algorithm algorithm = algorithmMapper.getAllById(id1);
         // 获取两个算法的提交ID
         String commitId1 = algorithmMapper.getcommitIdbyId(id1);
         String commitId2 = algorithmMapper.getcommitIdbyId(id2);
-
+        String fileName = algorithm.getName();
         StringBuilder diffContent = new StringBuilder();  // 用于拼接差异内容
 
         try {
             // 获取差异内容
-            diffContent.append(gitService.versionComparison(commitId1, commitId2));  // 获取差异内容并拼接
+            diffContent.append(gitService.versionComparison(commitId1, commitId2, fileName));  // 获取差异内容并拼接
 
         } catch (Exception e) {
             throw new RuntimeException("生成差异内容失败", e);
@@ -70,7 +71,7 @@ public class AlgorithmServiceImpl implements AlgorithmService {
         Algorithm algorithm = algorithmMapper.getAllById(id);
         System.out.println(algorithm.getName());
         //导出旧版本
-        gitService.exportVersion(algorithm.getCommitId(),algorithm.getName(),"D:\\Algorithm");
+        gitService.exportVersion(algorithm.getCommitId(),algorithm.getName(),"D:\\Algorithm\\Export");
         //压缩该文件
         fileService.compressDirectory(algorithm.getName());
         //导出该文件
