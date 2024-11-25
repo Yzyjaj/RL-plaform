@@ -11,7 +11,7 @@ public interface AlgorithmService {
 
     void deleteAlgorithm(Integer id);
     void updateAlgorithm(Algorithm algorithm);
-    void uploadAlgorithm(String name,String commitId,String description);
+    void uploadAlgorithm(String name,String commitId,String description, String initEnv, String initCommand);
     String compareAlgorithm(Integer id1, Integer id2);
     ResponseEntity<byte[]> exportAlgorithm(Integer id);
 

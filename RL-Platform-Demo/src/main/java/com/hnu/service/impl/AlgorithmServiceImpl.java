@@ -22,10 +22,12 @@ public class AlgorithmServiceImpl implements AlgorithmService {
 
     @Autowired
     private GitService gitService;
+
     @Override
     public List<Algorithm> getAlgorithm() {
         return algorithmMapper.getAlgorithm();
     }
+
 
     @Override
     public void deleteAlgorithm(Integer id) {
@@ -38,10 +40,11 @@ public class AlgorithmServiceImpl implements AlgorithmService {
     public void updateAlgorithm(Algorithm algorithm){
         algorithmMapper.updateAlgorithm(algorithm);
     }
+
     @Override
-    public void uploadAlgorithm(String name,String commitId,String description){
+    public void uploadAlgorithm(String name,String commitId,String description, String initEnv, String initCommand){
         Integer version = algorithmMapper.getNextVersion(name);
-        algorithmMapper.uploadAlgorithm(name,version,commitId,description);
+        algorithmMapper.uploadAlgorithm(name,version,commitId,description, initEnv, initCommand);
     }
 
     @Override

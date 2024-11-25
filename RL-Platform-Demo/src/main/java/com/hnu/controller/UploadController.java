@@ -29,7 +29,7 @@ public class UploadController {
     private AlgorithmService algorithmService;
 
     @PostMapping("/upload")
-    public Result uploadFile(MultipartFile file, String description) {
+    public Result uploadFile(MultipartFile file, String description, String initEnv, String initCommand) {
         System.out.println("接收文件: " + file.getOriginalFilename());
         try {
             // 1. 创建名为 algorithmName 的文件夹
@@ -83,7 +83,7 @@ public class UploadController {
             git.add().addFilepattern(name).call(); // 添加当前上传的文件
             git.commit().setMessage("Upload and extract file: " + name).call(); // 提交文件
             String commitID = gitService.submitInformation(repoDir.getAbsolutePath());
-            algorithmService.uploadAlgorithm(name, commitID, description);
+            algorithmService.uploadAlgorithm(name, commitID, description, initEnv, initCommand);
             System.out.println("文件已成功上传并提交到Git仓库");
 
 

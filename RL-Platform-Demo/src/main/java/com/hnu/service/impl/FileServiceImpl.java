@@ -6,6 +6,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipEntry;
+
+import com.hnu.pojo.Algorithm;
 import com.hnu.service.FileService;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
@@ -180,5 +182,44 @@ public class FileServiceImpl implements FileService {
         dir.delete(); // 删除空目录
     }
 
+    /**
+     * 根据算法信息生成模型保存路径。
+     * 如果是初始训练，则生成 version1 文件夹；
+     * 如果已经存在其他版本，则递增版本号并创建新的文件夹。
+     *
+     * @param algorithm 算法对象，包含算法名称和初始化环境等信息。
+     * @return 返回生成的模型保存路径。
+     */
+    public String generateModelSaveDir(Algorithm algorithm) {
+        // 基础路径
+        String baseDir = "D:\\Models\\";
+
+        // 获取算法名称和初始化环境
+        String algorithmName = algorithm.getName();
+        String initEnv = algorithm.getInitEnv();
+
+        // 拼接初始路径：D:\Models\{algorithmName}\{initEnv}
+        String modelBaseDir = baseDir + algorithmName + "\\" + initEnv + "\\";
+
+        // 创建基础文件夹（D:\Models\{algorithmName}\{initEnv}），如果不存在
+        File modelDir = new File(modelBaseDir);
+        if (!modelDir.exists()) {
+            modelDir.mkdirs();
+        }
+
+        // 从 version1 开始检查是否存在文件夹
+        int version = 1;
+        while (true) {
+            String versionedDir = modelBaseDir + "version" + version;
+            File versionedModelDir = new File(versionedDir);
+            if (!versionedModelDir.exists()) {
+                // 找到一个不存在的版本，创建对应文件夹
+                versionedModelDir.mkdirs();
+                return versionedDir;
+            }
+            // 如果该版本文件夹已存在，增加版本号继续检查
+            version++;
+        }
+    }
 
 }

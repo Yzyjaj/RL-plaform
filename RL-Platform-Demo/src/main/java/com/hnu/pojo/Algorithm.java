@@ -13,8 +13,8 @@ public class Algorithm {
     String name;
     Integer version;
     String description;
-    String dir;
-    String command;
+    String initEnv;
+    String initCommand;
     @Getter
     String commitId;
 

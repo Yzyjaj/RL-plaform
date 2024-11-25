@@ -1,10 +1,12 @@
 package com.hnu.controller;
 
 
+import com.hnu.mapper.AlgorithmMapper;
 import com.hnu.pojo.Algorithm;
 import com.hnu.pojo.Result;
 import com.hnu.service.AlgorithmService;
 import com.hnu.service.FileService;
+import com.hnu.service.PytorchService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 
-import java.io.File;
 import java.util.List;
 
 @Slf4j
@@ -22,7 +23,11 @@ public class AlgorithmController {
     @Autowired
     private AlgorithmService algorithmService;
     @Autowired
+    private AlgorithmMapper algorithmMapper;
+    @Autowired
     private FileService fileService;
+    @Autowired
+    private PytorchService pytorchService;
 
     @GetMapping("/getAlgorithm")
     public Result getAlgorithm(){
@@ -62,13 +67,31 @@ public class AlgorithmController {
         }
     }
 
-
-
     //导出旧版本代码
     @GetMapping("/exportAlgorithm/{id}")
     public ResponseEntity<byte[]> exportAlgorithm(@PathVariable Integer id){
         log.info("将算法文件压缩包上传给前端,{}",id);
         return algorithmService.exportAlgorithm(id);
+    }
+
+    //训练算法的初始模型
+    @PostMapping("/trainAlgorithm/{id}")
+    public ResponseEntity<String> trainAlgorithm(@PathVariable Integer id) {
+        try {
+            // 获取算法信息
+            Algorithm algorithm = algorithmMapper.getAlgorithmById(id);
+
+            // 生成模型保存路径
+            String modelSaveDir = fileService.generateModelSaveDir(algorithm);
+
+            System.out.println("algorithm"+algorithm);
+            System.out.println("modelSaveDir"+modelSaveDir);
+            // 执行训练命令
+            pytorchService.algorithmTraining(algorithm, modelSaveDir);
+            return ResponseEntity.ok("Training started successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Training failed: " + e.getMessage());
+        }
     }
 
 }
