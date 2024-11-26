@@ -1,6 +1,5 @@
     package com.hnu.service.impl;
 
-    import com.hnu.pojo.Algorithm;
     import com.hnu.service.FileService;
     import com.hnu.service.GitService;
     import org.eclipse.jgit.api.Git;
@@ -16,13 +15,11 @@
     import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
     import org.eclipse.jgit.treewalk.AbstractTreeIterator;
     import org.eclipse.jgit.treewalk.CanonicalTreeParser;
-
     import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.stereotype.Service;
 
     import java.io.*;
     import java.nio.charset.StandardCharsets;
-    import java.nio.file.Files;
     import java.util.List;
 
     @Service
@@ -120,7 +117,28 @@
             return treeParser;
         }
 
+        @Override
+        public void gitCheckout(String commitId ,String algorithmName){
+            try {
+                String exportDir = REPO_PATH + "\\" + algorithmName;
+                File repoDir = new File(exportDir);
+                FileRepositoryBuilder builder = new FileRepositoryBuilder();
+                Repository repository = builder.setGitDir(new File(repoDir, ".git"))
+                        .readEnvironment()
+                        .findGitDir()
+                        .build();
 
+                try (Git git = new Git(repository)) {
+                    // 执行 git checkout 到指定 commitId
+                    git.checkout().setName(commitId).call();
+                    System.out.println("Checked out to commit: " + commitId);
+
+                }
+            } catch (IOException | GitAPIException e) {
+                e.printStackTrace();
+            }
+
+        }
 
 
 

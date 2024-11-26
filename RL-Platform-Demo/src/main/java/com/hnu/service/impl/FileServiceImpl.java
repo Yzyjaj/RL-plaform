@@ -89,16 +89,16 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public void compressDirectory(String name) {
-        String sourceDirPath = REPO_PATH + '/' + name + '/' + name;
-        String zipFilePath = REPO_PATH + '/' + name + ".zip";
+    public void compressDirectory(String sourceDirPath, String outputDirPath) {
+        System.out.println("sourceDirPath: " + sourceDirPath);
+        System.out.println("outputDirPath: " + outputDirPath);
         File sourceDir = new File(sourceDirPath);
 
         if (!sourceDir.exists() || !sourceDir.isDirectory()) {
             throw new IllegalArgumentException("The source directory does not exist or is not a directory.");
         }
 
-        try (FileOutputStream fileOutputStream = new FileOutputStream(zipFilePath);
+        try (FileOutputStream fileOutputStream = new FileOutputStream(outputDirPath);
              ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream)) {
             Path sourcePath = Paths.get(sourceDirPath);
             Files.walk(sourcePath)
@@ -120,13 +120,13 @@ public class FileServiceImpl implements FileService {
 
     /**
      * 返回文件给前端，并在传输后删除临时文件
-     * @param file 临时文件
+     * @param outputPath 压缩文件
      * @return ResponseEntity 包含文件的响应体
      */
     @Override
-    public ResponseEntity<byte[]> downloadFile(String fileName) {
+    public ResponseEntity<byte[]> downloadFile(String outputPath) {
         // 创建临时文件路径
-        File file = new File(REPO_PATH + "/" + fileName); // 确保路径正确
+        File file = new File(outputPath); // 确保路径正确
 
         if (!file.exists()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -187,19 +187,17 @@ public class FileServiceImpl implements FileService {
      * 如果是初始训练，则生成 version1 文件夹；
      * 如果已经存在其他版本，则递增版本号并创建新的文件夹。
      *
-     * @param algorithm 算法对象，包含算法名称和初始化环境等信息。
+     * @param algorithmName 算法名称和。
+     * @param environment 算法环境。
      * @return 返回生成的模型保存路径。
      */
-    public String generateModelSaveDir(Algorithm algorithm) {
+    public String generateModelSaveDir(String algorithmName, String environment) {
         // 基础路径
         String baseDir = "D:\\Models\\";
 
-        // 获取算法名称和初始化环境
-        String algorithmName = algorithm.getName();
-        String initEnv = algorithm.getInitEnv();
 
-        // 拼接初始路径：D:\Models\{algorithmName}\{initEnv}
-        String modelBaseDir = baseDir + algorithmName + "\\" + initEnv + "\\";
+        // 拼接初始路径：D:\Models\{algorithmName}\{environment}
+        String modelBaseDir = baseDir + algorithmName + "\\" + environment + "\\";
 
         // 创建基础文件夹（D:\Models\{algorithmName}\{initEnv}），如果不存在
         File modelDir = new File(modelBaseDir);
@@ -220,6 +218,34 @@ public class FileServiceImpl implements FileService {
             // 如果该版本文件夹已存在，增加版本号继续检查
             version++;
         }
+    }
+
+    @Override
+    public String findModelFilePath(String algorithmName, String initEnv, Integer initVersion) {
+        // 构建目标路径
+        String directoryPath = String.format("D:\\Models\\%s\\%s\\version%d", algorithmName, initEnv, initVersion);
+
+        // 创建目录对象
+        File directory = new File(directoryPath);
+
+        // 如果目录不存在，返回空或抛出异常
+        if (!directory.exists() || !directory.isDirectory()) {
+            throw new IllegalArgumentException("The directory does not exist: " + directoryPath);
+        }
+
+        // 查找所有文件
+        File[] files = directory.listFiles((dir, name) -> name.endsWith(".pt"));
+
+        // 如果没有找到 .pt 文件，返回空或抛出异常
+        if (files == null || files.length == 0) {
+            throw new IllegalArgumentException("No .pt file found in directory: " + directoryPath);
+        }
+
+        // 假设只会找到一个 .pt 文件，取第一个文件的名字
+        File modelFile = files[0];
+
+        // 返回完整路径
+        return modelFile.getAbsolutePath();
     }
 
 }

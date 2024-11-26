@@ -29,6 +29,7 @@ public class AlgorithmController {
     @Autowired
     private PytorchService pytorchService;
 
+
     @GetMapping("/getAlgorithm")
     public Result getAlgorithm(){
         log.info("显示算法信息");
@@ -76,22 +77,34 @@ public class AlgorithmController {
 
     //训练算法的初始模型
     @PostMapping("/trainAlgorithm/{id}")
-    public ResponseEntity<String> trainAlgorithm(@PathVariable Integer id) {
+    public ResponseEntity<Result> trainAlgorithm(@PathVariable Integer id, @RequestParam  String modelDescription) {
         try {
             // 获取算法信息
             Algorithm algorithm = algorithmMapper.getAlgorithmById(id);
+            if (algorithm == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Result.error("Algorithm not found."));
+            }
 
             // 生成模型保存路径
-            String modelSaveDir = fileService.generateModelSaveDir(algorithm);
+            String modelSaveDir = fileService.generateModelSaveDir(algorithm.getName(), algorithm.getInitEnv());
+            System.out.println("algorithm" + algorithm);
+            System.out.println("modelSaveDir" + modelSaveDir);
 
-            System.out.println("algorithm"+algorithm);
-            System.out.println("modelSaveDir"+modelSaveDir);
             // 执行训练命令
-            pytorchService.algorithmTraining(algorithm, modelSaveDir);
-            return ResponseEntity.ok("Training started successfully.");
+            boolean trainingSuccess = pytorchService.algorithmTraining(algorithm, modelSaveDir);
+
+            if (!trainingSuccess) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Result.error("Training failed."));
+            }
+            // 保存模型信息到数据库
+            algorithmService.algorithmSaveModel(algorithm.getId(), algorithm.getName(), algorithm.getInitEnv(), algorithm.getInitCommand(), modelDescription);
+
+            // 返回特定成功代码
+            return ResponseEntity.ok(Result.success());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Training failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Result.error("Training failed: " + e.getMessage()));
         }
     }
+
 
 }

@@ -1,6 +1,7 @@
 package com.hnu.service.impl;
 
 import com.hnu.mapper.AlgorithmMapper;
+import com.hnu.mapper.ModelMapper;
 import com.hnu.pojo.Algorithm;
 import com.hnu.service.AlgorithmService;
 import com.hnu.service.FileService;
@@ -9,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.util.List;
 
 @Service
@@ -19,9 +19,10 @@ public class AlgorithmServiceImpl implements AlgorithmService {
     private AlgorithmMapper algorithmMapper;
     @Autowired
     private FileService fileService;
-
     @Autowired
     private GitService gitService;
+    @Autowired
+    private ModelMapper modelMapper;
 
     @Override
     public List<Algorithm> getAlgorithm() {
@@ -76,10 +77,19 @@ public class AlgorithmServiceImpl implements AlgorithmService {
         //导出旧版本
         gitService.exportVersion(algorithm.getCommitId(),algorithm.getName(),"D:\\Algorithm\\Export");
         //压缩该文件
-        fileService.compressDirectory(algorithm.getName());
+        String sourceDirPath = REPO_PATH + '/' + algorithm.getName() + '/' + algorithm.getName();
+        String outputDirPath = REPO_PATH + '/' + algorithm.getName() + ".zip";
+        fileService.compressDirectory(sourceDirPath, outputDirPath);
         //导出该文件
-        return fileService.downloadFile(algorithm.getName() + ".zip");
+        return fileService.downloadFile(outputDirPath);
     }
+
+    @Override
+    public void algorithmSaveModel(int algorithmId, String algorithm, String environment, String command, String modelDescription) {
+        Integer version = modelMapper.getNextVersion(algorithm, environment);
+        modelMapper.insertModel(algorithmId, algorithm, environment, version, command, modelDescription);
+    }
+
 
 
 
