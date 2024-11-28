@@ -19,14 +19,15 @@ public interface ModelMapper {
 
 
     // 插入模型
-    @Insert("INSERT INTO model_library (algorithm_id, algorithm, environment, version, command, description) " +
-            "VALUES (#{algorithmId}, #{algorithm}, #{environment}, #{version}, #{command}, #{description})")
+    @Insert("INSERT INTO model_library (algorithm_id, algorithm, environment, version, command, description, gitHash) " +
+            "VALUES (#{algorithmId}, #{algorithm}, #{environment}, #{version}, #{command}, #{description}, #{gitHash})")
     void insertModel(@Param("algorithmId") int algorithmId,
                      @Param("algorithm") String  algorithm,
                      @Param("environment") String environment,
                      @Param("version") Integer version,
                      @Param("command") String command,
-                     @Param("description") String description);
+                     @Param("description") String description,
+                     @Param("gitHash") String gitHash);
 
     // 根据ID获取模型
     @Select("SELECT * FROM model_library WHERE id = #{id}")
@@ -36,9 +37,6 @@ public interface ModelMapper {
     @Select("SELECT * FROM model_library")
     List<Model> getAllModels();
 
-    // 根据ID删除模型（可以用删除方法直接执行删除）
-    @Delete("DELETE FROM model_library WHERE id = #{id}")
-    void deleteModelById(@Param("id") Integer id);
 
 
 }

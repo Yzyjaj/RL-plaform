@@ -94,29 +94,39 @@ public class FileServiceImpl implements FileService {
         System.out.println("outputDirPath: " + outputDirPath);
         File sourceDir = new File(sourceDirPath);
 
-        if (!sourceDir.exists() || !sourceDir.isDirectory()) {
-            throw new IllegalArgumentException("The source directory does not exist or is not a directory.");
+        if (!sourceDir.exists()) {
+            throw new IllegalArgumentException("The source file or directory does not exist.");
         }
 
         try (FileOutputStream fileOutputStream = new FileOutputStream(outputDirPath);
              ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream)) {
-            Path sourcePath = Paths.get(sourceDirPath);
-            Files.walk(sourcePath)
-                    .filter(path -> !Files.isDirectory(path))
-                    .forEach(path -> {
-                        try {
-                            String relativePath = sourcePath.relativize(path).toString();
-                            zipOutputStream.putNextEntry(new ZipEntry(relativePath));
-                            Files.copy(path, zipOutputStream);
-                            zipOutputStream.closeEntry();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
+
+            if (sourceDir.isDirectory()) {
+                // 处理目录
+                Path sourcePath = Paths.get(sourceDirPath);
+                Files.walk(sourcePath)
+                        .filter(path -> !Files.isDirectory(path))
+                        .forEach(path -> {
+                            try {
+                                String relativePath = sourcePath.relativize(path).toString();
+                                zipOutputStream.putNextEntry(new ZipEntry(relativePath));
+                                Files.copy(path, zipOutputStream);
+                                zipOutputStream.closeEntry();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
+            } else if (sourceDir.isFile()) {
+                // 处理单个文件
+                zipOutputStream.putNextEntry(new ZipEntry(sourceDir.getName()));
+                Files.copy(sourceDir.toPath(), zipOutputStream);
+                zipOutputStream.closeEntry();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 
     /**
      * 返回文件给前端，并在传输后删除临时文件
@@ -182,6 +192,20 @@ public class FileServiceImpl implements FileService {
         dir.delete(); // 删除空目录
     }
 
+    // 删除 .pt 文件
+    public void deleteModelFile(String modelPath) {
+        File modelFile = new File(modelPath);
+        if (modelFile.exists()) {
+            if (modelFile.delete()) {
+                System.out.println("模型文件删除成功: " + modelPath);
+            } else {
+                System.out.println("删除模型文件失败: " + modelPath);
+            }
+        } else {
+            System.out.println("模型文件不存在: " + modelPath);
+        }
+    }
+
     /**
      * 根据算法信息生成模型保存路径。
      * 如果是初始训练，则生成 version1 文件夹；
@@ -195,7 +219,6 @@ public class FileServiceImpl implements FileService {
         // 基础路径
         String baseDir = "D:\\Models\\";
 
-
         // 拼接初始路径：D:\Models\{algorithmName}\{environment}
         String modelBaseDir = baseDir + algorithmName + "\\" + environment + "\\";
 
@@ -203,27 +226,33 @@ public class FileServiceImpl implements FileService {
         File modelDir = new File(modelBaseDir);
         if (!modelDir.exists()) {
             modelDir.mkdirs();
-        }
+            // 进入 Conda 环境并执行 git init 和 dvc init
+            try {
+                // 进入 Conda 环境并初始化 Git 和 DVC 仓库
+                String condaActivateCommand = "conda activate " + algorithmName;
+                String gitInitCommand = "git init";
+                String dvcInitCommand = "dvc init";
 
-        // 从 version1 开始检查是否存在文件夹
-        int version = 1;
-        while (true) {
-            String versionedDir = modelBaseDir + "version" + version;
-            File versionedModelDir = new File(versionedDir);
-            if (!versionedModelDir.exists()) {
-                // 找到一个不存在的版本，创建对应文件夹
-                versionedModelDir.mkdirs();
-                return versionedDir;
+                // 使用cmd命令执行 Conda激活、Git和DVC初始化
+                String[] commands = {
+                        "cmd.exe", "/c",
+                        condaActivateCommand + " && cd " + modelBaseDir + " && " + gitInitCommand + " && " + dvcInitCommand
+                };
+
+                Process process = Runtime.getRuntime().exec(commands);
+                process.waitFor(); // 等待命令执行完成
+
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace(); // 捕获异常
             }
-            // 如果该版本文件夹已存在，增加版本号继续检查
-            version++;
         }
+        return modelBaseDir;
     }
 
     @Override
-    public String findModelFilePath(String algorithmName, String initEnv, Integer initVersion) {
+    public String findModelFilePath(String algorithmName, String initEnv) {
         // 构建目标路径
-        String directoryPath = String.format("D:\\Models\\%s\\%s\\version%d", algorithmName, initEnv, initVersion);
+        String directoryPath = String.format("D:\\Models\\%s\\%s", algorithmName, initEnv);
 
         // 创建目录对象
         File directory = new File(directoryPath);

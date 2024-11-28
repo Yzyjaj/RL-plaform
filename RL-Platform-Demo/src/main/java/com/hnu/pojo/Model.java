@@ -45,4 +45,8 @@ public class Model {
      * 描述信息
      */
     private String description;  // 描述
+    /**
+     * Hash
+     */
+    private String gitHash;  // Hash
 }

@@ -6,6 +6,7 @@ import com.hnu.pojo.Algorithm;
 import com.hnu.pojo.Result;
 import com.hnu.service.AlgorithmService;
 import com.hnu.service.FileService;
+import com.hnu.service.GitService;
 import com.hnu.service.PytorchService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,8 @@ public class AlgorithmController {
     private FileService fileService;
     @Autowired
     private PytorchService pytorchService;
+    @Autowired
+    private GitService gitService;
 
 
     @GetMapping("/getAlgorithm")
@@ -96,9 +99,11 @@ public class AlgorithmController {
             if (!trainingSuccess) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Result.error("Training failed."));
             }
+            String gitHash = gitService.commitModelToDVC(modelSaveDir, algorithm.getName());
+            String deleteModelPath = modelSaveDir + algorithm.getName() + ".pt";
+            fileService.deleteModelFile(deleteModelPath);
             // 保存模型信息到数据库
-            algorithmService.algorithmSaveModel(algorithm.getId(), algorithm.getName(), algorithm.getInitEnv(), algorithm.getInitCommand(), modelDescription);
-
+            algorithmService.algorithmSaveModel(algorithm.getId(), algorithm.getName(), algorithm.getInitEnv(), algorithm.getInitCommand(), modelDescription, gitHash);
             // 返回特定成功代码
             return ResponseEntity.ok(Result.success());
         } catch (Exception e) {

@@ -140,7 +140,65 @@
 
         }
 
+        public String commitModelToDVC(String repoPath, String algorithmName) {
+            // 准备工作：模型文件路径
+            String modelPath = repoPath + "\\" + algorithmName + ".pt";
 
+            try {
+                // 激活 Conda 环境并进行 DVC 和 Git 操作
+                String condaActivateCommand = "conda activate " + algorithmName;
+                String dvcAddCommand = "dvc add " + modelPath;
+                String gitAddCommand = "git add " + modelPath + ".dvc .gitignore";
+                String gitCommitCommand = "git commit -m \"Add " + algorithmName + " for DVC\"";
+
+                // 执行命令
+                String[] commands = {
+                        "cmd.exe", "/c",
+                        condaActivateCommand + " && cd " + repoPath + " && " + dvcAddCommand + " && " + gitAddCommand + " && " + gitCommitCommand
+                };
+
+                // 执行命令
+                Process process = Runtime.getRuntime().exec(commands);
+                process.waitFor(); // 等待命令执行完成
+
+                // 获取提交哈希值
+                return submitInformation(repoPath);
+
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+                return "error";
+            }
+        }
+
+
+        public String dvcCheckout(String algorithmName, String initEnv, String gitHash) {
+            try {
+                // 激活 Conda 环境命令
+                String condaActivateCommand = "conda activate " + algorithmName;
+                // Git 和 DVC 操作命令
+                String gitCheckoutCommand = "git checkout " + gitHash;
+                String dvcCheckoutCommand = "dvc checkout";
+
+                // 拼接完整路径：D:\Models\{algorithmName}\{initEnv}
+                String repoPath = "D:\\Models\\" + algorithmName + "\\" + initEnv;
+
+                // 将所有命令串联在一起
+                String[] commands = {
+                        "cmd.exe", "/c",
+                        condaActivateCommand + " && cd " + repoPath + " && " + gitCheckoutCommand + " && " + dvcCheckoutCommand
+                };
+
+                // 执行命令
+                Process process = Runtime.getRuntime().exec(commands);
+                process.waitFor(); // 等待命令执行完成
+
+                return "Checkout completed for commit: " + gitHash;
+
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+                return "Error during checkout";
+            }
+        }
 
 
 

@@ -10,6 +10,5 @@ import java.util.List;
 public interface ModelService {
     ResponseEntity<String> continueTrain(Integer id, String command, String modelDescription);
     ResponseEntity<Result>  getAllModels();
-    ResponseEntity<String> deleteModel(Integer id);
     ResponseEntity<byte[]> exportModel(Integer id);
 }

@@ -10,7 +10,7 @@ public interface AlgorithmService {
     void deleteAlgorithm(Integer id);
     void updateAlgorithm(Algorithm algorithm);
     void uploadAlgorithm(String name,String commitId,String description, String initEnv, String initCommand);
-    void algorithmSaveModel(int algorithmId, String algorithm, String environment, String command, String modelDescription);
+    void algorithmSaveModel(int algorithmId, String algorithm, String environment, String command, String modelDescription, String gitHash);
     String compareAlgorithm(Integer id1, Integer id2);
     ResponseEntity<byte[]> exportAlgorithm(Integer id);
 

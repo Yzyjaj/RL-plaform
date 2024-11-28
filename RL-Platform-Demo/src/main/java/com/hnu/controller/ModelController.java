@@ -41,11 +41,6 @@ public class ModelController {
     }
 
 
-    // 根据id删除模型
-    @DeleteMapping("/deleteModel/{id}")
-    public ResponseEntity<String> deleteModel(@PathVariable Integer id) {
-        return modelService.deleteModel(id);
-    }
 
     // 导出模型信息接口
     @GetMapping("/exportModel/{id}")

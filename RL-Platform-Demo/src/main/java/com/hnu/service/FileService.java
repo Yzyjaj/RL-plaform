@@ -15,5 +15,6 @@ public interface FileService {
     ResponseEntity<byte[]> downloadFile(String name);
     String getFileNameWithoutExtension(String zipname);
     String generateModelSaveDir(String algorithmName, String environment);
-    String findModelFilePath(String algorithmName, String initEnv, Integer initVersion);
+    String findModelFilePath(String algorithmName, String initEnv);
+    void deleteModelFile(String modelPath);
 }

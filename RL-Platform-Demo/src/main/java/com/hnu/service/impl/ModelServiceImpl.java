@@ -11,9 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import javax.lang.model.element.ModuleElement;
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,9 +49,9 @@ public class ModelServiceImpl implements ModelService {
             String commitId = algorithm.getCommitId();
             String algorithmName = algorithm.getName();
             String initEnv =  model.getEnvironment();
-            Integer initVersion = model.getVersion();
-            String initDir = fileService.findModelFilePath(algorithmName, initEnv,initVersion);
+
             String changeEnv =  model.getEnvironment();
+            String gitHash = model.getGitHash();
             // 调用gitService进行算法版本回滚
             gitService.gitCheckout(commitId, algorithmName);
             // 解析上传的命令，提取--env_name参数的值
@@ -62,12 +59,21 @@ public class ModelServiceImpl implements ModelService {
             if (newEnv != null) {
                 changeEnv = newEnv;
             }
+
             String modelSaveDir = fileService.generateModelSaveDir(algorithmName, changeEnv);
+            gitService.dvcCheckout(algorithmName, initEnv, gitHash);
+            String initModelPath = fileService.findModelFilePath(algorithmName, initEnv);
             // 执行训练命令
-            pytorchService.continueTrain(algorithmName, initDir, modelSaveDir, command);
+            pytorchService.continueTrain(algorithmName, initModelPath, modelSaveDir, command);
+
+            fileService.deleteModelFile(initModelPath);
+            String commitHash = gitService.commitModelToDVC(modelSaveDir, algorithm.getName());
+            String deleteModelPath = modelSaveDir + algorithm.getName() + ".pt";
+
+            fileService.deleteModelFile(deleteModelPath);
             // 生成新的版本并保存模型
             Integer version = modelMapper.getNextVersion(model.getAlgorithm(), changeEnv);
-            modelMapper.insertModel(model.getAlgorithmId(), model.getAlgorithm(), changeEnv, version, command, modelDescription);
+            modelMapper.insertModel(model.getAlgorithmId(), model.getAlgorithm(), changeEnv, version, command, modelDescription, commitHash);
             return ResponseEntity.ok("Training continued successfully.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Training failed: " + e.getMessage());
@@ -94,41 +100,6 @@ public class ModelServiceImpl implements ModelService {
         }
     }
 
-    @Override
-    public ResponseEntity<String> deleteModel(Integer id) {
-        try {
-            // 查询模型信息
-            Model model = modelMapper.getModelById(id);
-            if (model == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Model not found.");
-            }
-
-            String algorithmName = model.getAlgorithm();
-            String initEnv = model.getEnvironment();
-            Integer initVersion = model.getVersion();
-
-            // 构建模型文件夹路径
-            String deleteDirPath = String.format("D:\\Models\\%s\\%s\\version%d", algorithmName, initEnv, initVersion);
-            File deleteDir = new File(deleteDirPath);
-
-            // 删除文件夹或文件
-            if (deleteDir.exists()) {
-                fileService.deleteDirectory(deleteDir); // 假设fileService负责删除文件夹
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Model directory not found.");
-            }
-
-            // 删除数据库中的记录
-            modelMapper.deleteModelById(id);
-
-            return ResponseEntity.ok("Model deleted successfully.");
-
-        } catch (Exception e) {
-            // 捕获任何异常，包含删除文件和数据库操作的异常
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An error occurred while deleting the model: " + e.getMessage());
-        }
-    }
 
 
     @Override
@@ -139,16 +110,21 @@ public class ModelServiceImpl implements ModelService {
         String algorithmName = model.getAlgorithm();
         String initEnv = model.getEnvironment();
         Integer initVersion = model.getVersion();
+        String gitHash = model.getGitHash();
+
+        gitService.dvcCheckout(algorithmName, initEnv, gitHash);
 
         // 构建模型文件夹路径
-        String sourceDirPath = String.format("D:\\Models\\%s\\%s\\version%d", algorithmName, initEnv, initVersion);
+        String sourceDirPath = String.format("D:\\Models\\%s\\%s\\%s.pt", algorithmName, initEnv, algorithmName);
 
         String outputDirPath = String.format("D:\\Models\\%s\\%s\\version%d.zip", algorithmName, initEnv, initVersion);
 
         fileService.compressDirectory(sourceDirPath, outputDirPath);
-        //导出该文件
+        String initModelPath = fileService.findModelFilePath(algorithmName, initEnv);
+        //fileService.deleteModelFile(initModelPath);
         return fileService.downloadFile(outputDirPath);
     }
+
 
     /**
      * 解析命令中的--env_name参数，并提取环境名

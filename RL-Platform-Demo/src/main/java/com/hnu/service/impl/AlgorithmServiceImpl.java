@@ -85,9 +85,9 @@ public class AlgorithmServiceImpl implements AlgorithmService {
     }
 
     @Override
-    public void algorithmSaveModel(int algorithmId, String algorithm, String environment, String command, String modelDescription) {
+    public void algorithmSaveModel(int algorithmId, String algorithm, String environment, String command, String modelDescription, String gitHash) {
         Integer version = modelMapper.getNextVersion(algorithm, environment);
-        modelMapper.insertModel(algorithmId, algorithm, environment, version, command, modelDescription);
+        modelMapper.insertModel(algorithmId, algorithm, environment, version, command, modelDescription, gitHash);
     }
 
 
